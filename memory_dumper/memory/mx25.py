@@ -19,15 +19,6 @@ class MemoryMX25:
         self.mSPI.spi_cs(0)
         time.sleep(0.001)
 
-    def send_erase(self):
-        return self.mSPI.transfer([0x20])
-
-    def send_read(self):
-        return self.mSPI.transfer([0x03])
-
-    def send_write(self):
-        return self.mSPI.transfer([0x02])
-
     def send_address(self, aSrcFlashAddr):
         theBuffer = [(aSrcFlashAddr & 0x00FF0000) >> 16, (aSrcFlashAddr & 0x0000FF00) >> 8, (aSrcFlashAddr & 0x000000FF)]
         return self.mSPI.transfer(theBuffer)
@@ -53,7 +44,7 @@ class MemoryMX25:
             self.enable_write()
             
             self.enable_CS()
-            self.send_erase()
+            self.mSPI.transfer([0x20])
             self.send_address(aPageAddr + (i * 256))
             self.disable_CS()
 
@@ -73,14 +64,13 @@ class MemoryMX25:
 
         return True
     
-
     def read(self, aPageAddr, aLength):
         buffer = []
         self.exit_DPD()
 
         self.enable_CS()
 
-        self.send_read()
+        self.mSPI.transfer([0x03])
         self.send_address(aPageAddr)
        
         for theOffset in range(0, aLength, 256):
@@ -113,7 +103,7 @@ class MemoryMX25:
             self.enable_write()
            
             self.enable_CS()
-            self.send_write()
+            self.mSPI.transfer([0x02])
             self.send_address(theAddr)
             self.mSPI.transfer(aSrcBuffer[theOffset : theOffset + theLengthToWrite])
             self.disable_CS()

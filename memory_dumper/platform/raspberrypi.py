@@ -6,7 +6,9 @@ _LOGGER = logging.getLogger(__name__)
 
 class RaspberryPi:
         #RPI4 pinout https://dnycf48t040dh.cloudfront.net/fit-in/840x473/GPIO-diagram-Raspberry-Pi-4.png
-        #gpio_cs has to be the cs pin (as BOARD numbering) - Black numbers: https://deusyss.developpez.com/tutoriels/RaspberryPi/PythonEtLeGpio/images/10000201000002B400000126AC7DABEE.png
+        #bus=0, device=0 refer to SPI0
+        #bus=0, device=1 refer to SPI1
+        
         #/dev/spidev<bus>.<device>
     def __init__(self, bus=0, device=0, gpio_cs=11):
         self.gpio_cs = gpio_cs
