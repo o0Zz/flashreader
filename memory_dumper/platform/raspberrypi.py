@@ -11,12 +11,26 @@ class RaspberryPi:
         
         #/dev/spidev<bus>.<device>
     def __init__(self, bus=0, device=0, gpio_cs=11):
+        self.bus = bus
+        self.device = device
         self.gpio_cs = gpio_cs
+        self.spi = spidev.SpiDev()
+
+    def open(self):
+        _LOGGER.debug(f"Opening platform RPI ...")
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.gpio_cs, GPIO.OUT) 
-        self.spi = spidev.SpiDev()
-        self.spi.open(bus, device)
+        
+        self.spi.open(self.bus, self.device)
         self.spi.max_speed_hz = 1000000  # Set SPI clock speed to 4MHz
+        
+        return True
+        
+    def close(self):
+        _LOGGER.debug("Closing platform RPI ...")
+        GPIO.cleanup()
+        self.spi.close()
+        return True
         
     def readbytes(self, length):
         ret = self.spi.readbytes(length)
@@ -32,5 +46,3 @@ class RaspberryPi:
     def spi_cs(self, value):
         GPIO.output(self.gpio_cs, value)
 
-    def close(self):
-        self.spi.close()
