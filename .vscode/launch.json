@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Test write",
+            "type": "debugpy",
+            "request": "launch",
+            "env": {"PYTHONPATH": "${workspaceFolder}"},
+            "program": "${workspaceFolder}/memory_dumper/__main__.py",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args": ["--platform", "ft232h", "--memory", "w25q", "--write", "./README.md", "--offset", "0", "--verbose"],
+        },
+        {
+            "name": "Test read",
+            "type": "debugpy",
+            "request": "launch",
+            "env": {"PYTHONPATH": "${workspaceFolder}"},
+            "program": "${workspaceFolder}/memory_dumper/__main__.py",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args": ["--platform", "ft232h", "--memory", "w25q", "--read", "./read.bin", "--offset", "0", "--length", "256", "--verbose"],
+        }
+    ]
+}
