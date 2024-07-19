@@ -1,14 +1,31 @@
 import argparse
 import logging
 import sys
+import importlib
+import os
 
 _LOGGER = logging.getLogger(__name__)
+
+memory = None
+platform = None
+
+def exit(exit_code):
+    global memory
+    global platform
+
+    if memory is not None:
+        memory.close()
+
+    if platform is not None:
+        platform.close()
+
+    sys.exit(exit_code)
 
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description='Memory Dumper')
-    parser.add_argument('--platform', type=str, help='Platform how to access SPI (raspberrypi etc ...)')
-    parser.add_argument('--memory', type=str, help='Type of flash to use (mx25 etc ...)')
+    parser.add_argument('--platform', type=str, help='Platform how to access SPI (raspberrypi etc ...)', required=True)
+    parser.add_argument('--memory', type=str, help='Type of flash to use (mx25 etc ...)', required=True)
     parser.add_argument('--read', type=str, help='Path to the destination file')
     parser.add_argument('--write', type=str, help='Path to the source file')
     parser.add_argument('--erase', action='store_true', help='Erase a part of the memory (Use offset/length to define it)')
@@ -21,48 +38,46 @@ if __name__ == '__main__':
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     
-    memory = None
-    platform = None
-    
     try:
-      if args.platform == 'raspberrypi':
-          from memory_dumper.platform.raspberrypi import RaspberryPi
-          platform = RaspberryPi()
-  
-      if not platform.open():
-          _LOGGER.error("Unable to open platform !")
-          sys.exit(1)
-      
-      if args.memory == 'mx25':
-          from memory_dumper.memory.mx25 import MemoryMX25
-          memory = MemoryMX25(platform)
-   
-      if not memory.open(args.force):
-          _LOGGER.error("Unable to open memory !")
-          sys.exit(1)
-        
-      if args.read:
-          with open(args.read, "wb") as fd:
-              data = memory.read(args.offset, args.length)
-              fd.write(bytes(data))
-  
-      elif args.write:
-          data = None
-          with open(args.write, "rb") as fd:
-              data = fd.read()
-          memory.write(args.offset, list(data))
-         
-      elif args.erase:
-          memory.erase(args.offset, args.length)
-          
+        platform_module = importlib.import_module(f'memory_dumper.platform.{args.platform}')
+    except ModuleNotFoundError as e:
+        _LOGGER.error(f"Unable to import platform module: {args.platform} (Module not found !)")
+        exit(1)
     except:
-        _LOGGER.exception("Main")
+        _LOGGER.exception(f"Import platform exception: {args.platform}")
+        exit(1)
+
+    platform = getattr(platform_module, 'Platform')()
+    if not platform.open():
+        _LOGGER.error("Unable to open platform !")
+        exit(1)
+
+    try:
+        memory_module = importlib.import_module(f'memory_dumper.memory.{args.memory}')
+    except ModuleNotFoundError as e:
+        _LOGGER.error(f"Unable to import memory module: {args.memory} (Module not found !)")
+        exit(1)
+    except:
+        _LOGGER.exception(f"Import memory exception: {args.memory}")
+        exit(1)
+
+    memory = getattr(memory_module, 'Memory')(platform)
+    if not memory.open(args.force):
+        _LOGGER.error("Unable to open memory !")
+        exit(1)
+
+    if args.read:
+        with open(args.read, "wb") as fd:
+            data = memory.read(args.offset, args.length)
+            fd.write(bytes(data))
+
+    elif args.write:
+        data = None
+        with open(args.write, "rb") as fd:
+            data = fd.read()
+        memory.write(args.offset, list(data))
         
-    finally:
+    elif args.erase:
+        memory.erase(args.offset, args.length)
 
-        if memory is not None:
-            memory.close()
-
-        if platform is not None:
-            platform.close()
-    
+    exit(0)
