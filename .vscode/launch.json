@@ -10,6 +10,7 @@
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "args": ["--platform", "ft232h", "--memory", "w25q", "--write", "./README.md", "--offset", "0", "--verbose"],
+            "justMyCode": false
         },
         {
             "name": "Test read",
@@ -20,6 +21,7 @@
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "args": ["--platform", "ft232h", "--memory", "w25q", "--read", "./read.bin", "--offset", "0", "--length", "256", "--verbose"],
+            "justMyCode": false
         }
     ]
 }

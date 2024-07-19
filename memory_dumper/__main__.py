@@ -29,7 +29,6 @@ if __name__ == '__main__':
     parser.add_argument('--read', type=str, help='Path to the destination file')
     parser.add_argument('--write', type=str, help='Path to the source file')
     parser.add_argument('--erase', action='store_true', help='Erase a part of the memory (Use offset/length to define it)')
-    parser.add_argument('--force', action='store_true', help='Force to open and use memory even if sanity check fails')
     parser.add_argument('--offset', type=lambda x: int(x, 16), help='Offset in bytes in hex (default: 0)', default=0x00000000)
     parser.add_argument('--length', type=int, help='Number of bytes to dump (default: 0 - means all memory)', default=0)
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
@@ -62,7 +61,7 @@ if __name__ == '__main__':
         exit(1)
 
     memory = getattr(memory_module, 'Memory')(platform)
-    if not memory.open(args.force):
+    if not memory.open():
         _LOGGER.error("Unable to open memory !")
         exit(1)
 
