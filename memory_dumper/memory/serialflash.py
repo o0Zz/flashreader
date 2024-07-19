@@ -24,23 +24,24 @@ class SerialFlash:
         self.READ_STATUS_REGISTER = 0x05
         self.WRITE = 0x02
         self.READ = 0x03
-        self.ERASE = 0x20
+        self.ERASE_SECTOR = 0x20
 
-    def open(self, force=False):        
-        data = self.__read_device_id()
+    def open(self):     
+        if self.DEVICE_ID != 0:   
+            data = self.mSPI.spi_transfer([self.DEVICE_ID], 3)
 
-        manufId = data[0]
-        memoryType = data[1]
-        memoryDensity = data[2]
-        
-        _LOGGER.debug(f"Manuf ID: {manufId}, Memory Type: {memoryType}, Memory Density: {memoryDensity}")
-        self.m_size = int(math.pow(2, memoryDensity))
+            manufId = data[0]
+            memoryType = data[1]
+            memoryDensity = data[2]
+            
+            _LOGGER.debug(f"Manuf ID: {manufId}, Memory Type: {memoryType}, Memory Density: {memoryDensity}")
+            self.m_size = int(math.pow(2, memoryDensity))
 
-        if manufId == 0xFF:
-            _LOGGER.error(f"Invalid device ID (Is memory connected ?)")
-            return False
+            if manufId == 0xFF:
+                _LOGGER.error(f"Invalid device ID (Is memory connected ?)")
+                return False
 
-        _LOGGER.info(f"Memory opened ! ( Force: {force}, Size: {self.m_size}, SectorSize: {self.m_sector_size} ({data}) )")
+        _LOGGER.info(f"Memory opened ! (Size: {self.m_size}, SectorSize: {self.m_sector_size})")
         return True
 
     def close(self):
@@ -48,10 +49,7 @@ class SerialFlash:
          
     def get_size(self):
         return self.m_size
-        
-    def __read_device_id(self):
-        return self.mSPI.spi_transfer([self.DEVICE_ID], 3)
-    
+
     def __read_status_register(self):
         return self.mSPI.spi_transfer([self.READ_STATUS_REGISTER], 1)[0]
 
