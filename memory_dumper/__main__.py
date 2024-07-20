@@ -13,11 +13,11 @@ def exit(exit_code):
     global memory
     global platform
 
-    if memory is not None:
-        memory.close()
-
     if platform is not None:
         platform.close()
+        
+    if memory is not None:
+        memory.close()
 
     sys.exit(exit_code)
 

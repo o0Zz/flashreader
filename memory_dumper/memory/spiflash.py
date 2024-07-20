@@ -13,9 +13,10 @@ SR_BP1 = 0b00001000  # bit protect #1
 SR_BP2 = 0b00010000  # bit protect #2
 SR_BP3 = 0b00100000  # bit protect #3
 
-class SerialFlash:
-    def __init__(self, anSPI):
-        self.mSPI = anSPI
+class SPIFlash:
+    def __init__(self, platform):
+        self.m_platform = platform
+        self.m_spi = None
         self.m_size = 0
         self.m_sector_size = 4096
 
@@ -26,9 +27,14 @@ class SerialFlash:
         self.READ = 0x03
         self.ERASE_SECTOR = 0x20
 
-    def open(self):     
+    def open(self):
+        self.m_spi = self.m_platform.get_spi()
+        if not self.m_spi.open():
+            _LOGGER.error(f"Unable to open SPI !")
+            return False
+
         if self.DEVICE_ID != 0:   
-            data = self.mSPI.spi_transfer([self.DEVICE_ID], 3)
+            data = self.m_spi.transfer([self.DEVICE_ID], 3)
 
             manufId = data[0]
             memoryType = data[1]
@@ -45,20 +51,20 @@ class SerialFlash:
         return True
 
     def close(self):
-        return True
+        return self.m_spi.close()
          
     def get_size(self):
         return self.m_size
 
     def __read_status_register(self):
-        return self.mSPI.spi_transfer([self.READ_STATUS_REGISTER], 1)[0]
+        return self.m_spi.transfer([self.READ_STATUS_REGISTER], 1)[0]
 
     def __is_busy(self):
         value = self.__read_status_register()
         return bool(value & SR_WIP)
 
     def enable_write(self):
-        self.mSPI.spi_transfer([self.ENABLE_WRITE], 0)
+        self.m_spi.transfer([self.ENABLE_WRITE], 0)
 
         time.sleep(0.1)
         value = self.__read_status_register()        
@@ -85,8 +91,8 @@ class SerialFlash:
                 return False
             
             theAddr = addr + (i * self.m_sector_size)
-            theBuffer = [self.ERASE, (theAddr & 0x00FF0000) >> 16, (theAddr & 0x0000FF00) >> 8, (theAddr & 0x000000FF)]
-            self.mSPI.spi_transfer(theBuffer, 0)
+            theBuffer = [self.ERASE_SECTOR, (theAddr & 0x00FF0000) >> 16, (theAddr & 0x0000FF00) >> 8, (theAddr & 0x000000FF)]
+            self.m_spi.transfer(theBuffer, 0)
                     
             while self.__is_busy():
                 time.sleep(0.01)
@@ -106,7 +112,7 @@ class SerialFlash:
             lSize = min(length - theOffset, SPI_MAX_BUFFER_SIZE)
             
             theBuffer = [self.READ, (theAddr & 0x00FF0000) >> 16, (theAddr & 0x0000FF00) >> 8, (theAddr & 0x000000FF)]
-            buf_tmp = self.mSPI.spi_transfer(theBuffer, lSize)
+            buf_tmp = self.m_spi.transfer(theBuffer, lSize)
             if len(buf_tmp) > 0:
                 buffer.extend(buf_tmp)
 
@@ -148,7 +154,7 @@ class SerialFlash:
             theBuffer = [self.WRITE, (theAddr & 0x00FF0000) >> 16, (theAddr & 0x0000FF00) >> 8, (theAddr & 0x000000FF)]
             theBuffer.extend(aSrcBuffer[theOffset : theOffset + theLengthToWrite])
 
-            self.mSPI.spi_transfer(theBuffer, 0)
+            self.m_spi.transfer(theBuffer, 0)
 
             while self.__is_busy():
                 time.sleep(0.01)
