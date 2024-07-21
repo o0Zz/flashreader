@@ -15,7 +15,7 @@ def exit(exit_code):
 
     if platform is not None:
         platform.close()
-        
+
     if memory is not None:
         memory.close()
 

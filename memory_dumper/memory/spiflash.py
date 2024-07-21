@@ -15,8 +15,7 @@ SR_BP3 = 0b00100000  # bit protect #3
 
 class SPIFlash:
     def __init__(self, platform):
-        self.m_platform = platform
-        self.m_spi = None
+        self.m_spi = platform.spi
         self.m_size = 0
         self.m_sector_size = 4096
 
@@ -28,7 +27,6 @@ class SPIFlash:
         self.ERASE_SECTOR = 0x20
 
     def open(self):
-        self.m_spi = self.m_platform.get_spi()
         if not self.m_spi.open():
             _LOGGER.error(f"Unable to open SPI !")
             return False
@@ -56,18 +54,15 @@ class SPIFlash:
     def get_size(self):
         return self.m_size
 
-    def __read_status_register(self):
-        return self.m_spi.transfer([self.READ_STATUS_REGISTER], 1)[0]
-
     def __is_busy(self):
-        value = self.__read_status_register()
+        value = self.m_spi.transfer([self.READ_STATUS_REGISTER], 1)[0]
         return bool(value & SR_WIP)
 
-    def enable_write(self):
+    def __enable_write(self):
         self.m_spi.transfer([self.ENABLE_WRITE], 0)
 
         time.sleep(0.1)
-        value = self.__read_status_register()        
+        value = self.m_spi.transfer([self.READ_STATUS_REGISTER], 1)[0]    
         if not (value & SR_WEL):
             _LOGGER.error(f"Enable write failed (Status: {value})!")
             return False
@@ -86,7 +81,7 @@ class SPIFlash:
 
         for i in range(0, int(length/self.m_sector_size)):
         
-            if not self.enable_write():
+            if not self.__enable_write():
                 _LOGGER.error(f"Erase flash failed at page {i} !")
                 return False
             
@@ -148,7 +143,7 @@ class SPIFlash:
 
             theOffset = theAddr - aDstAddr
 
-            if not self.enable_write():
+            if not self.__enable_write():
                 return False
            
             theBuffer = [self.WRITE, (theAddr & 0x00FF0000) >> 16, (theAddr & 0x0000FF00) >> 8, (theAddr & 0x000000FF)]

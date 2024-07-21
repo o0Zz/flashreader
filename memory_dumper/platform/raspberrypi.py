@@ -11,7 +11,10 @@ class PlatformSPI:
         self.spi_bus = spi_bus
         self.spi_device = spi_device
         self.spi_cs = spi_cs
-        self.spi = spidev.SpiDev()
+        self.spi = None
+
+    def is_open(self):
+        return self.spi is not None
 
     def open(self):
         _LOGGER.debug(f"Opening RPI SPI ...")
@@ -20,16 +23,19 @@ class PlatformSPI:
 
         self.__spi_cs(1) #Disable CS
 
+        self.spi = spidev.SpiDev()
         self.spi.open(self.spi_bus, self.spi_device)
         self.spi.max_speed_hz = 1000000  # Set SPI clock speed to 4MHz
         return True
         
     def close(self):
+        if self.spi is None:
+            return True
+
         _LOGGER.debug("Closing RPI SPI ...")
         GPIO.cleanup()
 
-        if self.spi is not None:
-            self.spi.close()
+        self.spi.close()
         return True
         
     def __read(self, length):
@@ -61,24 +67,33 @@ class PlatformSPI:
 
 class PlatformI2C:
     def __init__(self):
-        self.bus = smbus.SMBus(0)
-        
-    def open(self):
+        self.bus = None
+
+    def is_open(self):
+        return self.bus is not None
+    
+    def open(self, slave_address):
         _LOGGER.debug(f"Opening RPI I2C ...")
+        self.bus = smbus.SMBus(0)
+        self.slave_address = slave_address
         return True
         
     def close(self):
+        if self.bus is None:
+            return True
+        
         _LOGGER.debug("Closing RPI I2C ...")
+        self.bus = None
         return True
         
-    def read(self, address, length):
-        ret = self.bus.read_i2c_block_data(address, 0, length)
+    def read(self, length):
+        ret = self.bus.read_i2c_block_data(self.slave_address, 0x00, length)
         _LOGGER.debug(f"I2C read: {ret}")
         return ret
 
-    def write(self, address, data):
+    def write(self, data):
         _LOGGER.debug(f"I2C write: {data}")
-        self.bus.write_i2c_block_data(address, 0, data)
+        self.bus.write_i2c_block_data(self.slave_address, 0x00, data)
 
 class Platform:
         #RPI4 pinout https://dnycf48t040dh.cloudfront.net/fit-in/840x473/GPIO-diagram-Raspberry-Pi-4.png
@@ -92,13 +107,16 @@ class Platform:
         self.spi_cs = spi_cs
 
     def open(self):
+        self.spi = PlatformSPI(self.spi_bus, self.spi_device, self.spi_cs)
+        self.i2c = PlatformI2C()
         return True
     
     def close(self):
-        return True
-    
-    def get_spi(self):
-        return PlatformSPI(self.spi_bus, self.spi_device, self.spi_cs)
+        if self.spi.is_open():
+            self.spi.close()
 
-    def get_i2c(self):
-        return PlatformI2C()
+        if self.i2c.is_open():
+            self.i2c.close()
+
+        return True
+  
