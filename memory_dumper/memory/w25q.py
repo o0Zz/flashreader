@@ -1,4 +1,4 @@
-from memory_dumper.memory.spiflash import SPIFlash
+from memory_dumper.memory.spiflash import Memory as SPIFlash
 
 #https://docs.rs-online.com/9bfc/0900766b81704060.pdf
 

@@ -13,7 +13,7 @@ SR_BP1 = 0b00001000  # bit protect #1
 SR_BP2 = 0b00010000  # bit protect #2
 SR_BP3 = 0b00100000  # bit protect #3
 
-class SPIFlash:
+class Memory:
     def __init__(self, platform):
         self.m_spi = platform.spi
         self.m_size = 0
@@ -34,14 +34,14 @@ class SPIFlash:
         if self.DEVICE_ID != 0:   
             data = self.m_spi.transfer([self.DEVICE_ID], 3)
 
-            manufId = data[0]
-            memoryType = data[1]
-            memoryDensity = data[2]
+            manuf_id = data[0]
+            memory_type = data[1]
+            memory_density = data[2]
             
-            _LOGGER.debug(f"Manuf ID: {manufId}, Memory Type: {memoryType}, Memory Density: {memoryDensity}")
-            self.m_size = int(math.pow(2, memoryDensity))
+            _LOGGER.debug(f"Manuf ID: {manuf_id}, Memory Type: {memory_type}, Memory Density: {memory_density}")
+            self.m_size = int(math.pow(2, memory_density))
 
-            if manufId == 0xFF:
+            if manuf_id == 0xFF:
                 _LOGGER.error(f"Invalid device ID (Is memory connected ?)")
                 return False
 
@@ -69,15 +69,19 @@ class SPIFlash:
 
         return True        
 
-    def erase(self, addr, length = 0):
+    def erase(self, address, length = 0):
         if length == 0:
             length = self.m_size
         
-        if ((addr % self.m_sector_size) != 0):
-            _LOGGER.error(f"Erase addr is not a modulo of sector size ({self.m_sector_size})")
+        if (length % self.m_sector_size) != 0:
+            _LOGGER.error(f"Erase length is not a modulo of sector size ({self.m_sector_size})")
+            return False
+        
+        if ((address % self.m_sector_size) != 0):
+            _LOGGER.error(f"Erase address is not a modulo of sector size ({self.m_sector_size})")
             return False
 
-        _LOGGER.info(f"Erasing 0x{addr:08x} (Length: {length} - PageCount: {int(length/self.m_sector_size)})")
+        _LOGGER.info(f"Erasing 0x{address:08x} (Length: {length} - PageCount: {int(length/self.m_sector_size)})")
 
         for i in range(0, int(length/self.m_sector_size)):
         
@@ -85,29 +89,29 @@ class SPIFlash:
                 _LOGGER.error(f"Erase flash failed at page {i} !")
                 return False
             
-            theAddr = addr + (i * self.m_sector_size)
-            theBuffer = [self.ERASE_SECTOR, (theAddr & 0x00FF0000) >> 16, (theAddr & 0x0000FF00) >> 8, (theAddr & 0x000000FF)]
-            self.m_spi.transfer(theBuffer, 0)
+            addr = address + (i * self.m_sector_size)
+            buf = [self.ERASE_SECTOR, (addr & 0x00FF0000) >> 16, (addr & 0x0000FF00) >> 8, (addr & 0x000000FF)]
+            self.m_spi.transfer(buf, 0)
                     
             while self.__is_busy():
                 time.sleep(0.01)
             
         return True
     
-    def read(self, aPageAddr, length = 0):
+    def read(self, address, length = 0):
         buffer = []
         if length == 0:
             length = self.m_size
             
-        _LOGGER.info(f"Reading offset: 0x{aPageAddr:08x} Length: {length}")
+        _LOGGER.info(f"Reading offset: 0x{address:08x} Length: {length}")
 
         prev_progress = 0
-        for theOffset in range(0, length, SPI_MAX_BUFFER_SIZE):
-            theAddr = aPageAddr + theOffset
-            lSize = min(length - theOffset, SPI_MAX_BUFFER_SIZE)
+        for offset in range(0, length, SPI_MAX_BUFFER_SIZE):
+            addr = address + offset
+            read_size = min(length - offset, SPI_MAX_BUFFER_SIZE)
             
-            theBuffer = [self.READ, (theAddr & 0x00FF0000) >> 16, (theAddr & 0x0000FF00) >> 8, (theAddr & 0x000000FF)]
-            buf_tmp = self.m_spi.transfer(theBuffer, lSize)
+            buf = [self.READ, (addr & 0x00FF0000) >> 16, (addr & 0x0000FF00) >> 8, (addr & 0x000000FF)]
+            buf_tmp = self.m_spi.transfer(buf, read_size)
             if len(buf_tmp) > 0:
                 buffer.extend(buf_tmp)
 
@@ -118,48 +122,37 @@ class SPIFlash:
 
         return buffer
 
-    def write(self, aDstAddr, aSrcBuffer):
-        _LOGGER.info(f"Write offset: 0x{aDstAddr:08x} Length: {len(aSrcBuffer)}")
+    def write(self, address, data):
+        _LOGGER.info(f"Write offset: 0x{address:08x} Length: {len(data)}")
         
-        if ((aDstAddr % self.m_sector_size) != 0):
+        if ((address % self.m_sector_size) != 0):
             _LOGGER.error(f"Write destination addr is not a modulo of sector size ({self.m_sector_size})")
             return False
             
         prev_progress = 0
-        theEndAddr = aDstAddr + len(aSrcBuffer)
-        theAddr = aDstAddr
-        while theAddr < theEndAddr:
-        
-            if ((theAddr % self.m_sector_size) == 0):
-                self.erase(theAddr, self.m_sector_size)
-                
-            theLengthToWrite = SPI_MAX_BUFFER_SIZE
 
-            if theAddr % 0x100 != 0:
-                theLengthToWrite = 0x100 - (theAddr % 0x100)
+        for offset in range(0, len(data), SPI_MAX_BUFFER_SIZE):
+            addr = address + offset
 
-            if theLengthToWrite > theEndAddr - theAddr:
-                theLengthToWrite = theEndAddr - theAddr
-
-            theOffset = theAddr - aDstAddr
+            if ((addr % self.m_sector_size) == 0):
+                if not self.erase(addr, self.m_sector_size):
+                    return False
 
             if not self.__enable_write():
                 return False
-           
-            theBuffer = [self.WRITE, (theAddr & 0x00FF0000) >> 16, (theAddr & 0x0000FF00) >> 8, (theAddr & 0x000000FF)]
-            theBuffer.extend(aSrcBuffer[theOffset : theOffset + theLengthToWrite])
+            
+            buf = [self.WRITE, (addr & 0x00FF0000) >> 16, (addr & 0x0000FF00) >> 8, (addr & 0x000000FF)]
+            buf.extend(data[offset : offset + SPI_MAX_BUFFER_SIZE])
 
-            self.m_spi.transfer(theBuffer, 0)
+            self.m_spi.transfer(buf, 0)
 
             while self.__is_busy():
                 time.sleep(0.01)
 
-            progress = int((theOffset/len(aSrcBuffer)) * 100)
+            progress = int((offset/len(data)) * 100)
             if progress > prev_progress:
                 prev_progress = progress
                 _LOGGER.info(f"Write: {progress}%")
-                
-            theAddr += theLengthToWrite
 
         return True
 

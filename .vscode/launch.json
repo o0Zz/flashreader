@@ -9,7 +9,7 @@
             "program": "${workspaceFolder}/memory_dumper/__main__.py",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
-            "args": ["--platform", "ft232h", "--memory", "24lc", "--write", "./README.md", "--offset", "0", "--verbose"],
+            "args": ["--platform", "ft232h", "--memory", "spiflash", "--write", "./README.md", "--offset", "0", "--verbose"],
             "justMyCode": false
         },
         {
@@ -20,7 +20,7 @@
             "program": "${workspaceFolder}/memory_dumper/__main__.py",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
-            "args": ["--platform", "ft232h", "--memory", "24lc", "--read", "./read.bin", "--offset", "0", "--length", "512", "--verbose"],
+            "args": ["--platform", "ft232h", "--memory", "spiflash", "--read", "./read.bin", "--offset", "0", "--length", "512", "--verbose"],
             "justMyCode": false
         }
         ,
@@ -32,7 +32,7 @@
             "program": "${workspaceFolder}/memory_dumper/__main__.py",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
-            "args": ["--platform", "ft232h", "--memory", "24lc", "--erase", "--offset", "0", "--length", "512", "--verbose"],
+            "args": ["--platform", "ft232h", "--memory", "spiflash", "--erase", "--offset", "0", "--length", "4096", "--verbose"],
             "justMyCode": false
         }
     ]

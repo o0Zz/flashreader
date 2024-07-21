@@ -2,7 +2,6 @@ import argparse
 import logging
 import sys
 import importlib
-import os
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -74,9 +73,14 @@ if __name__ == '__main__':
         data = None
         with open(args.write, "rb") as fd:
             data = fd.read()
-        memory.write(args.offset, list(data))
+        
+        if not memory.write(args.offset, list(data)):
+            _LOGGER.error("Write failed !")
+            exit(2)
         
     elif args.erase:
-        memory.erase(args.offset, args.length)
+        if not memory.erase(args.offset, args.length):
+            _LOGGER.error("Erase failed !")
+            exit(2)
 
     exit(0)

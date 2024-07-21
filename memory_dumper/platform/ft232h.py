@@ -47,7 +47,6 @@ class PlatformSPI:
 
         return ret
 
-
 # PIN OUT I2C
 # D0 -> SCL
 # D1 -> SDA

@@ -1,4 +1,4 @@
-from memory_dumper.memory.spiflash import SPIFlash
+from memory_dumper.memory.spiflash import Memory as SPIFlash
 
 #http://ww1.microchip.com/downloads/en/DeviceDoc/20001836J.pdf
 
