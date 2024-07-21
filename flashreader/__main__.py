@@ -20,8 +20,7 @@ def exit(exit_code):
 
     sys.exit(exit_code)
 
-if __name__ == '__main__':
-    
+def main():
     parser = argparse.ArgumentParser(description='Memory Dumper')
     parser.add_argument('--platform', type=str, help='Platform how to access SPI (raspberrypi etc ...)', required=True)
     parser.add_argument('--memory', type=str, help='Type of flash to use (mx25 etc ...)', required=True)
@@ -84,3 +83,6 @@ if __name__ == '__main__':
             exit(2)
 
     exit(0)
+    
+if __name__ == '__main__':
+    main()
