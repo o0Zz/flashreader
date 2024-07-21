@@ -39,9 +39,9 @@ sudo raspi-config
 ## Run
 Read spi flash (By using generic driver: spiflash)
 
-`python -m memory_dumper --platform raspberrypi --memory spiflash --read ./dump.bin --offset 0`
+`python -m flashreader --platform raspberrypi --memory spiflash --read ./dump.bin --offset 0`
 
 Write spi flash (By using generic driver: spiflash)
 
-`python -m memory_dumper --platform raspberrypi --memory spiflash --write ./dump.bin --offset 0`
+`python -m flashreader --platform raspberrypi --memory spiflash --write ./dump.bin --offset 0`
 
