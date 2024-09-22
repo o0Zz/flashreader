@@ -6,12 +6,12 @@ _LOGGER = logging.getLogger(__name__)
 
 SPI_MAX_BUFFER_SIZE=256
 
-SR_WIP = 0b00000001  # Busy/Work-in-progress bit
-SR_WEL = 0b00000010  # Write enable bit
-SR_BP0 = 0b00000100  # bit protect #0
-SR_BP1 = 0b00001000  # bit protect #1
-SR_BP2 = 0b00010000  # bit protect #2
-SR_BP3 = 0b00100000  # bit protect #3
+SR_WIP = 0x01  # Busy/Work-in-progress bit
+SR_WEL = 0x02  # Write enable bit
+SR_BP0 = 0x04  # bit protect #0
+SR_BP1 = 0x08  # bit protect #1
+SR_BP2 = 0x10  # bit protect #2
+SR_BP3 = 0x20  # bit protect #3
 
 class Memory:
     def __init__(self, platform):
@@ -25,6 +25,13 @@ class Memory:
         self.WRITE = 0x02
         self.READ = 0x03
         self.ERASE_SECTOR = 0x20
+
+    def __enter__(self):
+        self.open()
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
     def open(self):
         if not self.m_spi.open():
@@ -67,7 +74,7 @@ class Memory:
             _LOGGER.error(f"Enable write failed (Status: {value})!")
             return False
 
-        return True        
+        return True
 
     def erase(self, address, length = 0):
         if length == 0:
@@ -81,6 +88,10 @@ class Memory:
             _LOGGER.error(f"Erase address is not a modulo of sector size ({self.m_sector_size})")
             return False
 
+        if self.ERASE_SECTOR == 0x00:
+            _LOGGER.warning(f"Memory don't support erase command !")
+            return True
+        
         _LOGGER.info(f"Erasing 0x{address:08x} (Length: {length} - PageCount: {int(length/self.m_sector_size)})")
 
         for i in range(0, int(length/self.m_sector_size)):
@@ -90,12 +101,13 @@ class Memory:
                 return False
             
             addr = address + (i * self.m_sector_size)
+
             buf = [self.ERASE_SECTOR, (addr & 0x00FF0000) >> 16, (addr & 0x0000FF00) >> 8, (addr & 0x000000FF)]
             self.m_spi.transfer(buf, 0)
                     
             while self.__is_busy():
                 time.sleep(0.01)
-            
+
         return True
     
     def read(self, address, length = 0):

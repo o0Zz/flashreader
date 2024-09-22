@@ -2,6 +2,19 @@
 Flash Reader allows to read and/or write any EEPROM or Flash memory via SPI or I2C.
 This library is particularly useful in case of reverse engineering or prototyping for embedded systems (RPI, etc..).
 
+```
+from flashreader.memory import spiflash, m95, mx25, w25q, _24lc, _25lc, _25aa
+from flashreader.platform import ft232h, raspberrypi
+
+with ft232h.Platform() as platform: #Open FT232H adapter
+    with spiflash.Memory(platform) as memory: #Open generic SPI flash
+        print(f"Writing hello world @0x0000...")
+        memory.write(0x0000, b'Hello World')
+
+        buf = bytearray(memory.read(0x00000000, 11))
+        print(f"Read @0x0000: {buf}")
+```
+
 ## Supported platform
 - [x] Raspberry pi 4
 - [x] FT232H ([Adafruit](https://www.adafruit.com/product/2264))
@@ -12,6 +25,7 @@ This library is particularly useful in case of reverse engineering or prototypin
 - [x] Microchip 25aa..., 25lc...
 - [x] Winbond w25q...
 - [x] Microchip 24lc...
+- [x] ST m95...
 
 ## Quick start (Raspberry pi 4)
 ### Setup Raspbian

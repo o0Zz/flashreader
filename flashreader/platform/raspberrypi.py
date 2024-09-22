@@ -1,10 +1,14 @@
-import spidev
-import smbus
-import RPi.GPIO as GPIO
 import logging
 import time
 
 _LOGGER = logging.getLogger(__name__)
+
+try:
+    import spidev
+    import smbus
+    import RPi.GPIO as GPIO
+except ImportError:
+    _LOGGER.error("Unable to import RPI GPIO library !")
 
 class PlatformSPI:
     def __init__(self, spi_bus=0, spi_device=0, spi_cs=0):
@@ -105,6 +109,13 @@ class Platform:
         self.spi_bus = spi_bus
         self.spi_device = spi_device
         self.spi_cs = spi_cs
+
+    def __enter__(self):
+        self.open()
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
     def open(self):
         self.spi = PlatformSPI(self.spi_bus, self.spi_device, self.spi_cs)

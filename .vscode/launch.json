@@ -6,10 +6,10 @@
             "type": "debugpy",
             "request": "launch",
             "env": {"PYTHONPATH": "${workspaceFolder}"},
-            "program": "${workspaceFolder}/memory_dumper/__main__.py",
+            "program": "${workspaceFolder}/flashreader/__main__.py",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
-            "args": ["--platform", "ft232h", "--memory", "spiflash", "--write", "./README.md", "--offset", "0", "--verbose"],
+            "args": ["--platform", "ft232h", "--memory", "m95", "--write", "./README.md", "--offset", "0", "--verbose"],
             "justMyCode": false
         },
         {
@@ -17,10 +17,10 @@
             "type": "debugpy",
             "request": "launch",
             "env": {"PYTHONPATH": "${workspaceFolder}"},
-            "program": "${workspaceFolder}/memory_dumper/__main__.py",
+            "program": "${workspaceFolder}/flashreader/__main__.py",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
-            "args": ["--platform", "ft232h", "--memory", "spiflash", "--read", "./read.bin", "--offset", "0", "--length", "512", "--verbose"],
+            "args": ["--platform", "ft232h", "--memory", "m95", "--read", "./read.bin", "--offset", "0", "--length", "512", "--verbose"],
             "justMyCode": false
         }
         ,
@@ -29,10 +29,10 @@
             "type": "debugpy",
             "request": "launch",
             "env": {"PYTHONPATH": "${workspaceFolder}"},
-            "program": "${workspaceFolder}/memory_dumper/__main__.py",
+            "program": "${workspaceFolder}/flashreader/__main__.py",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
-            "args": ["--platform", "ft232h", "--memory", "spiflash", "--erase", "--offset", "0", "--length", "4096", "--verbose"],
+            "args": ["--platform", "ft232h", "--memory", "m95", "--erase", "--offset", "0", "--length", "4096", "--verbose"],
             "justMyCode": false
         }
     ]

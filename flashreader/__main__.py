@@ -36,7 +36,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     
     try:
-        platform_module = importlib.import_module(f'memory_dumper.platform.{args.platform}')
+        platform_module = importlib.import_module(f'flashreader.platform.{args.platform}')
     except ModuleNotFoundError as e:
         _LOGGER.error(f"Unable to import platform module: {args.platform} (Module not found !)")
         exit(1)
@@ -50,7 +50,7 @@ def main():
         exit(1)
 
     try:
-        memory_module = importlib.import_module(f'memory_dumper.memory.{args.memory}')
+        memory_module = importlib.import_module(f'flashreader.memory.{args.memory}')
     except ModuleNotFoundError as e:
         _LOGGER.error(f"Unable to import memory module: {args.memory} (Module not found !)")
         exit(1)

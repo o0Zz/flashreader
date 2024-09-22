@@ -92,6 +92,13 @@ class Platform:
         self.gpio_cs = gpio_cs
         self.spi = None
         self.i2c = None
+        
+    def __enter__(self):
+        self.open()
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
     def open(self):
         if self.url == None:
