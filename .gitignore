@@ -1,2 +1,5 @@
 *.pyc
 *.bin
+*.egg-info
+*.tar.gz
+*.whl
